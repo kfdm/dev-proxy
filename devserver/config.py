@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from asyncio import Semaphore
+from asyncio import Lock
 from subprocess import STDOUT, check_call
 
 from aiohttp import ClientSession, web
@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 class HostConfig:
     def __init__(self, config):
         self.config = config
-        self.lock = Semaphore()
+        self.lock = Lock()
 
     async def proxy(self, request):
         async with ClientSession() as session:
