@@ -41,7 +41,7 @@ async def handler(request: web.Request):
         return web.Response(status=500, text=f"Unknown host: {request.host}")
     else:
         async with config.lock:
-            logger.debug("Processing: %s%s", request.host, request.path)
+            logger.debug("Processing: %s %s%s",request.method, request.host, request.path)
             return await process(request, config)
 
 

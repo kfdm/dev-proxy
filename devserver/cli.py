@@ -24,4 +24,5 @@ def web(server, port):
         loop.run_until_complete(main(server, port))
     except KeyboardInterrupt:
         pass
-    loop.close()
+    finally:
+        loop.close()
