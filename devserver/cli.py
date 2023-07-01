@@ -1,9 +1,9 @@
+import asyncio
 import logging
-from http.server import ThreadingHTTPServer
 
 import click
 
-from .proxy import ProxyHTTPRequestHandler
+from .proxy import main
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +17,10 @@ def cli():
 @click.option("--server", default="localhost")
 @click.option("--port", default=8080)
 def web(server, port):
-    httpd = ThreadingHTTPServer((server, port), ProxyHTTPRequestHandler)
-    logger.info("http server is running %s", httpd.server_port)
-    httpd.serve_forever()
+    loop = asyncio.get_event_loop()
+
+    try:
+        loop.run_until_complete(main(server, port))
+    except KeyboardInterrupt:
+        pass
+    loop.close()
