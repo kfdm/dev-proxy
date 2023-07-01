@@ -40,7 +40,3 @@ pip: $(PYTHON_BIN)
 web: $(APP_BIN)
 	$(APP_BIN) web
 
-
-.PHONY: sudo
-sudo: $(APP_BIN)
-	sudo $(APP_BIN) web --port 80

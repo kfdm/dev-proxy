@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 @click.group()
 def cli():
     logging.basicConfig(level=logging.WARN)
+    logging.getLogger("devserver").setLevel(logging.DEBUG)
 
 
 @cli.command()

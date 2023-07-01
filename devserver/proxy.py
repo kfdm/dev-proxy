@@ -1,12 +1,11 @@
 import asyncio
 import logging
-from asyncio import Semaphore
-from subprocess import STDOUT, check_call
 
-from aiohttp import ClientConnectorError, ClientSession, web
+from aiohttp import ClientConnectorError, web
+
+from .config import HostConfig
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 
 
 config_map = {
@@ -17,40 +16,6 @@ config_map = {
         "command": "make web",
     },
 }
-
-
-class HostConfig:
-    def __init__(self, config):
-        self.config = config
-        self.lock = Semaphore()
-
-    async def proxy(self, request):
-        async with ClientSession() as session:
-            async with session.get(
-                url=f"http://localhost:{self.config['port']}{request.path}",
-                headers=request.headers,
-            ) as result:
-                return web.Response(
-                    text=await result.text(),
-                    status=result.status,
-                    headers=result.headers,
-                )
-
-    async def launch(self):
-        logger.info('Launching .... %s', self.config['command'])
-        check_call(
-            [
-                "tmux",
-                "new-session",
-                "-s",
-                self.config["name"],
-                "-d",
-                self.config["command"],
-            ],
-            cwd=self.config["cwd"],
-            stderr=STDOUT,
-        )
-        await asyncio.sleep(5)
 
 
 configs = {k: HostConfig(config_map[k]) for k in config_map}
