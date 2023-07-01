@@ -1,12 +1,19 @@
+from http.server import HTTPServer
+
 import click
+
+from .proxy import ProxyHTTPRequestHandler
 
 
 @click.group()
 def cli():
-    """Example script."""
-    click.echo("Hello World!")
+    pass
 
 
-@cli.command()  # @cli, not @click!
-def web():
-    click.echo("Syncing")
+@cli.command()
+@click.option("--server", default="localhost")
+@click.option("--port", default=8080)
+def web(server, port):
+    httpd = HTTPServer((server, port), ProxyHTTPRequestHandler)
+    print("http server is running", httpd.server_port)
+    httpd.serve_forever()
