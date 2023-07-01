@@ -24,7 +24,20 @@ class HostConfig:
         self.config = config
         self.lock = Semaphore()
 
-    def launch(self):
+    async def proxy(self, request):
+        async with ClientSession() as session:
+            async with session.get(
+                url=f"http://localhost:{self.config['port']}{request.path}",
+                headers=request.headers,
+            ) as result:
+                return web.Response(
+                    text=await result.text(),
+                    status=result.status,
+                    headers=result.headers,
+                )
+
+    async def launch(self):
+        logger.info('Launching .... %s', self.config['command'])
         check_call(
             [
                 "tmux",
@@ -37,6 +50,7 @@ class HostConfig:
             cwd=self.config["cwd"],
             stderr=STDOUT,
         )
+        await asyncio.sleep(5)
 
 
 configs = {k: HostConfig(config_map[k]) for k in config_map}
@@ -44,18 +58,13 @@ configs = {k: HostConfig(config_map[k]) for k in config_map}
 
 async def process(request: web.Request, config: HostConfig):
     try:
-        async with ClientSession() as session:
-            async with session.get(
-                url=f"http://localhost:{config.config['port']}{request.path}",
-                headers=request.headers,
-            ) as result:
-                return web.Response(
-                    text=await result.text(),
-                    status=result.status,
-                    headers=result.headers,
-                )
+        return await config.proxy(request)
     except ClientConnectorError:
-        config.launch()
+        await config.launch()
+
+    try:
+        return await config.proxy(request)
+    except ClientConnectorError:
         return web.Response(text="Service not yet running", status=500)
 
 
