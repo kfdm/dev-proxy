@@ -3,10 +3,12 @@ import logging
 from subprocess import STDOUT, check_call
 from threading import Semaphore
 
-from aiohttp import web
-from requests import ConnectionError, HTTPError, Session
+from aiohttp import ClientSession, web
+from requests import ConnectionError, HTTPError
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
 
 configs = {
     "tsun.localhost": {
@@ -19,13 +21,19 @@ configs = {
 
 
 async def process(request: web.Request, config):
-    client = Session()
     try:
-        response = client.get(
-            url=f"http://localhost:{config['port']}{request.path}",
-            headers=request.headers,
-        )
-        response.raise_for_status()
+        async with ClientSession() as session:
+            async with session.get(
+                url=f"http://localhost:{config['port']}{request.path}",
+                headers=request.headers,
+            ) as response:
+                response.raise_for_status()
+                return web.Response(
+                    text=await response.text(),
+                    status=response.status,
+                    headers=response.headers,
+                )
+
     except HTTPError:
         return web.Response(body=response.content, status=response.status_code)
     except ConnectionError:
@@ -42,25 +50,17 @@ async def process(request: web.Request, config):
             stderr=STDOUT,
         )
         return web.Response(text="Service not yet running", status=500)
-    else:
-        content_type = response.headers["Content-Type"]
-
-        return web.Response(
-            body=response.content,
-            status=response.status_code,
-            content_type=content_type.split(";", 1)[0]
-            if ";" in content_type
-            else content_type,
-        )
 
 
 async def handler(request: web.Request):
     try:
         config = configs[request.host]
     except KeyError:
+        logger.warning("Unknown host: %s%s", request.host, request.path)
         return web.Response(status=500, text=f"Unknown host: {request.host}")
     else:
         with config.get("lock", Semaphore()):
+            logger.debug("Processing: %s%s", request.host, request.path)
             return await process(request, config)
 
 
@@ -71,7 +71,7 @@ async def main(host, port):
     site = web.TCPSite(runner, host, port)
     await site.start()
 
-    print(f"======= Serving on http://{host}:{port}/ ======")
+    logger.info("=== Serving on http://%s:%s ===", host, port)
 
     # pause here for very long time by serving HTTP requests and
     # waiting for keyboard interruption
