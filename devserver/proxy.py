@@ -1,16 +1,15 @@
 import asyncio
 import logging
+from asyncio import Semaphore
 from subprocess import STDOUT, check_call
-from threading import Semaphore
 
-from aiohttp import ClientSession, web
-from requests import ConnectionError, HTTPError
+from aiohttp import ClientConnectorError, ClientSession, web
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-configs = {
+config_map = {
     "tsun.localhost": {
         "name": "tsundere",
         "port": 8000,
@@ -20,35 +19,43 @@ configs = {
 }
 
 
-async def process(request: web.Request, config):
-    try:
-        async with ClientSession() as session:
-            async with session.get(
-                url=f"http://localhost:{config['port']}{request.path}",
-                headers=request.headers,
-            ) as response:
-                response.raise_for_status()
-                return web.Response(
-                    text=await response.text(),
-                    status=response.status,
-                    headers=response.headers,
-                )
+class HostConfig:
+    def __init__(self, config):
+        self.config = config
+        self.lock = Semaphore()
 
-    except HTTPError:
-        return web.Response(body=response.content, status=response.status_code)
-    except ConnectionError:
+    def launch(self):
         check_call(
             [
                 "tmux",
                 "new-session",
                 "-s",
-                config["name"],
+                self.config["name"],
                 "-d",
-                config["command"],
+                self.config["command"],
             ],
-            cwd=config["cwd"],
+            cwd=self.config["cwd"],
             stderr=STDOUT,
         )
+
+
+configs = {k: HostConfig(config_map[k]) for k in config_map}
+
+
+async def process(request: web.Request, config: HostConfig):
+    try:
+        async with ClientSession() as session:
+            async with session.get(
+                url=f"http://localhost:{config.config['port']}{request.path}",
+                headers=request.headers,
+            ) as result:
+                return web.Response(
+                    text=await result.text(),
+                    status=result.status,
+                    headers=result.headers,
+                )
+    except ClientConnectorError:
+        config.launch()
         return web.Response(text="Service not yet running", status=500)
 
 
@@ -59,7 +66,7 @@ async def handler(request: web.Request):
         logger.warning("Unknown host: %s%s", request.host, request.path)
         return web.Response(status=500, text=f"Unknown host: {request.host}")
     else:
-        with config.get("lock", Semaphore()):
+        async with config.lock:
             logger.debug("Processing: %s%s", request.host, request.path)
             return await process(request, config)
 
