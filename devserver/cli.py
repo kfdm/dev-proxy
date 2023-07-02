@@ -3,7 +3,7 @@ import logging
 
 import click
 
-from .proxy import main
+from . import proxy
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,8 @@ def web(server, port):
     loop = asyncio.get_event_loop()
 
     try:
-        loop.run_until_complete(main(server, port))
+        proxy_server = proxy.ProxyDispatch()
+        loop.run_until_complete(proxy_server.main(server, port))
     except KeyboardInterrupt:
         pass
     finally:
