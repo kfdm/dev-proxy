@@ -20,7 +20,7 @@ ignore = [
 
 
 [tool.ruff.isort]
-known-first-party = ["tsundere"]
+known-first-party = ["devserver"]
 
 [tool.black]
 target-version = ['py39']
