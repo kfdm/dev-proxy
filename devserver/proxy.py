@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from subprocess import CalledProcessError
 
 from aiohttp import ClientConnectorError, web
 
@@ -18,7 +19,10 @@ async def process(request: web.Request, config: HostConfig):
     try:
         return await config.proxy(request)
     except ClientConnectorError:
-        await config.launch()
+        try:
+            await config.launch()
+        except CalledProcessError:
+            return web.Response(text="Error launching process", status=500)
 
     logger.debug("Retrying: %s %s%s", request.method, request.host, request.path)
     try:
