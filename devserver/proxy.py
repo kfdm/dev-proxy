@@ -3,21 +3,13 @@ import logging
 
 from aiohttp import ClientConnectorError, web
 
+from . import config
 from .upstream import HostConfig
 
 logger = logging.getLogger(__name__)
 
 
-config_map = {
-    "tsun.localhost": {
-        "name": "tsundere",
-        "port": 8000,
-        "cwd": "/Users/paultraylor/Projects/tsundere",
-        "command": "make web",
-    },
-}
-
-
+config_map = config.load(config.DEFAULT)
 configs = {k: HostConfig(config_map[k]) for k in config_map}
 
 
