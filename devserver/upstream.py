@@ -24,6 +24,7 @@ class HostConfig:
             params=request.query,
             data=data,
             cookies=request.cookies,
+            allow_redirects=False,
         ) as result:
             return web.Response(
                 body=await result.read(),
