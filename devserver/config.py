@@ -3,7 +3,7 @@ import logging
 from asyncio import Lock
 from subprocess import STDOUT, check_call
 
-from aiohttp import ClientSession, web
+from aiohttp import client, web
 
 logger = logging.getLogger(__name__)
 
@@ -13,17 +13,22 @@ class HostConfig:
         self.config = config
         self.lock = Lock()
 
-    async def proxy(self, request):
-        async with ClientSession() as session:
-            async with session.get(
-                url=f"http://localhost:{self.config['port']}{request.path}",
-                headers=request.headers,
-            ) as result:
-                return web.Response(
-                    text=await result.text(),
-                    status=result.status,
-                    headers=result.headers,
-                )
+    async def proxy(self, request: web.Request):
+        data = await request.read() if request.can_read_body else None
+
+        async with client.request(
+            method=request.method,
+            url=f"http://localhost:{self.config['port']}{request.path}",
+            headers=request.headers,
+            params=request.query,
+            data=data,
+            cookies=request.cookies,
+        ) as result:
+            return web.Response(
+                body=await result.read(),
+                status=result.status,
+                headers=result.headers,
+            )
 
     async def launch(self):
         logger.info("Launching .... %s", self.config["command"])
