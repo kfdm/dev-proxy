@@ -1,6 +1,5 @@
-from pathlib import Path
-
 import tomllib
+from pathlib import Path
 
 DEFAULT = Path.home() / ".config" / "dev-server.toml"
 
