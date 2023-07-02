@@ -1,33 +1,32 @@
 import asyncio
 import logging
-from subprocess import CalledProcessError
+import subprocess
 
-from aiohttp import ClientConnectorError, web
+from aiohttp import client, web
 
-from . import config
-from .upstream import HostConfig
+from . import config, upstream
 
 logger = logging.getLogger(__name__)
 
 
 config_map = config.load(config.DEFAULT)
-configs = {k: HostConfig(config_map[k]) for k in config_map}
+configs = {k: upstream.HostConfig(config_map[k]) for k in config_map}
 
 
-async def process(request: web.Request, config: HostConfig):
+async def process(request: web.Request, config: upstream.HostConfig):
     logger.debug("Processing: %s %s%s", request.method, request.host, request.path)
     try:
         return await config.proxy(request)
-    except ClientConnectorError:
+    except client.ClientConnectorError:
         try:
             await config.launch()
-        except CalledProcessError:
+        except subprocess.CalledProcessError:
             return web.Response(text="Error launching process", status=500)
 
     logger.debug("Retrying: %s %s%s", request.method, request.host, request.path)
     try:
         return await config.proxy(request)
-    except ClientConnectorError:
+    except client.ClientConnectorError:
         return web.Response(text="Service not yet running", status=503)
 
 

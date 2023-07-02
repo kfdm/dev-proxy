@@ -1,6 +1,5 @@
 import asyncio
 import logging
-from asyncio import Lock
 from pathlib import Path
 from subprocess import STDOUT, check_call
 
@@ -12,7 +11,7 @@ logger = logging.getLogger(__name__)
 class HostConfig:
     def __init__(self, config):
         self.config = config
-        self.lock = Lock()
+        self.lock = asyncio.Lock()
 
     async def proxy(self, request: web.Request):
         data = await request.read() if request.can_read_body else None
