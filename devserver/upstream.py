@@ -9,7 +9,8 @@ logger = logging.getLogger(__name__)
 
 
 class HostConfig:
-    def __init__(self, config):
+    def __init__(self, *, name, config):
+        self.name = name
         self.config = config
         self.lock = asyncio.Lock()
 
@@ -35,15 +36,13 @@ class HostConfig:
         kwargs = {
             "stderr": STDOUT,
         }
-        args = []
-        if "tmux" in self.config:
-            args += [
-                "tmux",
-                "new-session",
-                "-s",
-                self.config["tmux"],
-                "-d",
-            ]
+        args = [
+            "tmux",
+            "new-session",
+            "-s",
+            self.name,
+            "-d",
+        ]
         if "command" in self.config:
             args.append(
                 self.config["command"].replace("{port}", str(self.config["port"]))

@@ -10,7 +10,13 @@ logger = logging.getLogger(__name__)
 
 
 config_map = config.load(config.DEFAULT)
-configs = {k: upstream.HostConfig(config_map[k]) for k in config_map}
+
+configs = {
+    config_map["service"][name]["host"]: upstream.HostConfig(
+        name=name, config=config_map["service"][name]
+    )
+    for name in config_map["service"]
+}
 
 
 async def process(request: web.Request, config: upstream.HostConfig):
