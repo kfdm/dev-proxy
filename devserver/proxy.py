@@ -3,7 +3,7 @@ import logging
 
 from aiohttp import ClientConnectorError, web
 
-from .config import HostConfig
+from .upstream import HostConfig
 
 logger = logging.getLogger(__name__)
 
