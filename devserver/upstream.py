@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from asyncio import locks, streams
 from pathlib import Path
 from subprocess import STDOUT, check_call
 
@@ -12,7 +13,17 @@ class HostConfig:
     def __init__(self, *, name, config):
         self.name = name
         self.config = config
-        self.lock = asyncio.Lock()
+        self.lock = locks.Lock()
+
+    async def test(self):
+        try:
+            await streams.open_connection(
+                host="127.0.0.1",
+                port=self.config["port"],
+            )
+        except Exception as e:
+            print(e)
+            await self.launch()
 
     async def proxy(self, request: web.Request):
         data = await request.read() if request.can_read_body else None
@@ -25,6 +36,7 @@ class HostConfig:
             data=data,
             cookies=request.cookies,
             allow_redirects=False,
+            timeout=client.ClientTimeout(10),
         ) as result:
             return web.Response(
                 body=await result.read(),

@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import subprocess
 from pathlib import Path
 
 from aiohttp import client, web
@@ -32,15 +31,11 @@ class ProxyDispatch:
 
     async def process(self, request: web.Request, config: upstream.HostConfig):
         logger.debug("Processing: %s %s%s", request.method, request.host, request.path)
-        try:
-            return await config.proxy(request)
-        except client.ClientConnectorError:
-            try:
-                await config.launch()
-            except subprocess.CalledProcessError:
-                return web.Response(text="Error launching process", status=500)
 
-        logger.debug("Retrying: %s %s%s", request.method, request.host, request.path)
+        # Test for open connection
+        await config.test()
+
+        # Try reading upstream
         try:
             return await config.proxy(request)
         except client.ClientConnectorError:
@@ -53,8 +48,7 @@ class ProxyDispatch:
             logger.warning("Unknown host: %s%s", request.host, request)
             return web.Response(status=500, text=f"Unknown host: {request.host}")
         else:
-            async with config.lock:
-                return await self.process(request, config)
+            return await self.process(request, config)
 
     async def main(self, host, port):
         server = web.Server(self.handler)
