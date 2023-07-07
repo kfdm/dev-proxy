@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from asyncio import locks, streams
+from asyncio import streams
 from pathlib import Path
 from subprocess import STDOUT, check_call
 
@@ -13,7 +13,6 @@ class HostConfig:
     def __init__(self, *, name, config):
         self.name = name
         self.config = config
-        self.lock = locks.Lock()
 
     async def test(self):
         try:
