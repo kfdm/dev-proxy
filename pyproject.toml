@@ -1,3 +1,20 @@
+[build-system]
+requires = ["setuptools>=61.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dev-server"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "aiohttp",
+    "click",
+    "watchfiles",
+]
+
+[project.scripts]
+dev-server = "devserver.cli:cli"
+
 [tool.ruff]
 target-version = "py311"
 
@@ -5,7 +22,7 @@ target-version = "py311"
 select = [
     "C",       # complexity
     "E",       # pycodestyle
-    "F",    # Unused imports
+    "F",       # Unused imports
     "I",       # isort
     "PGH004",  # Use specific rule codes when using noqa
     "PLC0414", # Useless import alias. Import alias does not rename original package.
@@ -18,14 +35,5 @@ ignore = [
     'E501', # Let black handle length
 ]
 
-
 [tool.ruff.isort]
 known-first-party = ["devserver"]
-
-[tool.black]
-target-version = ['py39']
-extend-exclude = '''
-(.*migrations.*
-|.*settings.py
-|.*urls.py)
-'''
