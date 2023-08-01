@@ -36,10 +36,14 @@ class HostConfig:
             allow_redirects=False,
             timeout=client.ClientTimeout(10),
         ) as result:
+            headers = result.headers.copy()
+            # Need to remove any 'Transfer-Encoding' header since we're
+            # not streaming the request
+            headers.pop("Transfer-Encoding", "")
             return web.Response(
                 body=await result.read(),
                 status=result.status,
-                headers=result.headers,
+                headers=headers,
             )
 
     async def launch(self):
