@@ -25,7 +25,7 @@ class ProxyDispatch:
         try:
             return await config.proxy(request)
         except client.ClientConnectorError:
-            return web.Response(text="Service not yet running", status=503)
+            return web.Response(text="dev-proxy Service not yet running", status=503)
 
     async def handler(self, request: web.Request):
         try:
@@ -33,7 +33,7 @@ class ProxyDispatch:
                 config = self.services[request.host]
         except KeyError:
             logger.warning("Unknown host: %s%s", request.host, request)
-            return web.Response(status=500, text=f"Unknown host: {request.host}")
+            return web.Response(status=500, text=f"dev-proxy: Unknown host: {request.host}")
         else:
             return await self.process(request, config)
 
