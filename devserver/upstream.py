@@ -29,9 +29,8 @@ class HostConfig:
 
         async with client.request(
             method=request.method,
-            url=f"http://localhost:{self.config['port']}{request.path}",
+            url=f"http://localhost:{self.config['port']}{request.path_qs}",
             headers=request.headers,
-            params=request.query,
             data=data,
             cookies=request.cookies,
             allow_redirects=False,

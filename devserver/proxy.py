@@ -16,7 +16,7 @@ class ProxyDispatch:
         self.servicelock = locks.Lock()
 
     async def process(self, request: web.Request, config: upstream.HostConfig):
-        logger.debug("Processing: %s %s%s", request.method, request.host, request.path)
+        logger.debug("Processing: %s %s%s", request.method, request.host, request.path_qs)
 
         # Test for open connection
         await config.test()
