@@ -55,7 +55,9 @@ class HostConfig:
         ]
         if "command" in self.config:
             args.append(
-                self.config["command"].replace("{port}", str(self.config["port"]))
+                self.config["command"]
+                .replace("{port}", str(self.config["port"]))
+                .replace("{host}", str(self.config["host"]))
             )
         if "cwd" in self.config:
             kwargs["cwd"] = Path(self.config["cwd"]).expanduser().resolve()
