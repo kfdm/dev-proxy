@@ -38,5 +38,4 @@ pip: $(PYTHON_BIN)
 
 .PHONY: web
 web: $(APP_BIN)
-	$(APP_BIN) web
-
+	$(APP_BIN) web --port 7999
