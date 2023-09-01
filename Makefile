@@ -39,3 +39,7 @@ pip: $(PYTHON_BIN)
 .PHONY: web
 web: $(APP_BIN)
 	$(APP_BIN) web --port 7999
+
+.PHONY: list
+list: $(APP_BIN)
+	$(APP_BIN) list |  column -t | sort -nk 3
