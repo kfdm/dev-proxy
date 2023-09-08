@@ -16,13 +16,15 @@ class HostConfig:
 
     async def test(self):
         try:
-            await streams.open_connection(
+            _, writer = await streams.open_connection(
                 host="127.0.0.1",
                 port=self.config["port"],
             )
-        except Exception as e:
-            print(e)
+        except Exception:
+            logger.warning("Attemping to launch service")
             await self.launch()
+        finally:
+            writer.close()
 
     async def proxy(self, request: web.Request):
         data = await request.read() if request.can_read_body else None
