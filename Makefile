@@ -39,3 +39,7 @@ pip: $(PYTHON_BIN)
 .PHONY: web
 web: $(APP_BIN)
 	$(APP_BIN) web --port 7999
+
+.PHONY: install
+install: $(APP_BIN)
+	$(APP_BIN) install

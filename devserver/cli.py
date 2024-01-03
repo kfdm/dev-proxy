@@ -1,5 +1,9 @@
 import asyncio
 import logging
+import os
+import plistlib
+import subprocess
+import sys
 from pathlib import Path
 
 import click
@@ -29,3 +33,35 @@ def web(config, **kwargs):
         pass
     finally:
         loop.close()
+
+
+@cli.command()
+def install():
+    label = "net.kungfudiscomonkey.dev-server"
+    path = Path.home() / "Library" / "LaunchAgents" / (label + ".plist")
+    print(path)
+    logs = Path.home() / "Library" / "Logs" / label
+    # https://launchd.info/
+    pl = plistlib.loads(b'<plist version="1.0"><dict></dict></plist>')
+    pl["Label"] = label
+    pl["ProgramArguments"] = [
+        str(Path(sys.argv[0]).absolute()),
+        "web",
+        "--port",
+        "7999",
+    ]
+    pl["RunAtLoad"] = True
+    pl["StandardOutPath"] = str(logs)
+    pl["StandardErrorPath"] = str(logs)
+    pl["EnvironmentVariables"] = {"PATH": os.environ["PATH"]}
+    with path.open("wb+") as fp:
+        print("Writing to ", fp.name)
+        plistlib.dump(pl, fp=fp)
+
+    print(f"Unload {path}")
+    subprocess.check_call(["launchctl", "unload", path])
+    print(f"Load {path}")
+    subprocess.check_call(["launchctl", "load", path])
+
+
+# launchctl enable user/`id -u`/com.ionic.python.ionic-fs-watcher.startup
