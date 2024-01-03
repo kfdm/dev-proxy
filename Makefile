@@ -7,9 +7,9 @@ BLACK_BIN := $(VENV_DIR)/bin/black
 
 
 .PHONY: format
-format: $(RUFF_BIN) $(BLACK_BIN)
-	$(RUFF_BIN) check devserver --fix
-	$(BLACK_BIN) devserver
+format: $(RUFF_BIN) 
+	$(RUFF_BIN) check  --fix .
+	$(RUFF_BIN) format .
 
 ################################################################################
 # Internal Commands
@@ -25,8 +25,6 @@ $(APP_BIN): $(VENV_DIR)
 $(RUFF_BIN): $(PYTHON_BIN)
 	$(PYTHON_BIN) -m pip install ruff
 
-$(BLACK_BIN): $(PYTHON_BIN)
-	$(PYTHON_BIN) -m pip install black
 
 ################################################################################
 # Dev Commands
