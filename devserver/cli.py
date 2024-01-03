@@ -1,22 +1,31 @@
 import asyncio
 import logging
-import os
-import plistlib
-import subprocess
-import sys
 from pathlib import Path
 
 import click
+from setproctitle import setproctitle
 
-from . import config, proxy
+from . import config, launchd, proxy
 
 logger = logging.getLogger(__name__)
 
 
+def level(value):
+    value = value.upper()
+    if value not in logging._nameToLevel:
+        raise click.BadParameter(f"{value} is not a valid log level")
+
+    return value
+
+
 @click.group()
-def cli():
-    logging.basicConfig(level=logging.WARN)
-    logging.getLogger("devserver").setLevel(logging.DEBUG)
+@click.option("-l", "--level", default="WARN", type=level, help="Logging Level")
+def cli(level):
+    setproctitle("dev-server-proxy")
+    logging.basicConfig(
+        level=logging.getLevelName(level),
+        format="%(asctime)s %(levelname)s:%(name)s:%(message)s",
+    )
 
 
 @cli.command()
@@ -36,32 +45,7 @@ def web(config, **kwargs):
 
 
 @cli.command()
-def install():
-    label = "net.kungfudiscomonkey.dev-server"
-    path = Path.home() / "Library" / "LaunchAgents" / (label + ".plist")
-    print(path)
-    logs = Path.home() / "Library" / "Logs" / label
-    # https://launchd.info/
-    pl = plistlib.loads(b'<plist version="1.0"><dict></dict></plist>')
-    pl["Label"] = label
-    pl["ProgramArguments"] = [
-        str(Path(sys.argv[0]).absolute()),
-        "web",
-        "--port",
-        "7999",
-    ]
-    pl["RunAtLoad"] = True
-    pl["StandardOutPath"] = str(logs)
-    pl["StandardErrorPath"] = str(logs)
-    pl["EnvironmentVariables"] = {"PATH": os.environ["PATH"]}
-    with path.open("wb+") as fp:
-        print("Writing to ", fp.name)
-        plistlib.dump(pl, fp=fp)
-
-    print(f"Unload {path}")
-    subprocess.check_call(["launchctl", "unload", path])
-    print(f"Load {path}")
-    subprocess.check_call(["launchctl", "load", path])
-
-
-# launchctl enable user/`id -u`/com.ionic.python.ionic-fs-watcher.startup
+@click.option("--label", default="net.kungfudiscomonkey.dev-server")
+def install(label):
+    path = launchd.install(label)
+    click.echo(f"Installed to {path}")

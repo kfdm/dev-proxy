@@ -10,6 +10,7 @@ dependencies = [
     "aiohttp",
     "click",
     "watchfiles",
+    'setproctitle',
 ]
 
 [project.scripts]

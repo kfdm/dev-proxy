@@ -20,11 +20,10 @@ class HostConfig:
                 host="127.0.0.1",
                 port=self.config["port"],
             )
+            writer.close()
         except Exception:
             logger.warning("Attemping to launch service")
             await self.launch()
-        finally:
-            writer.close()
 
     async def proxy(self, request: web.Request):
         data = await request.read() if request.can_read_body else None
@@ -60,11 +59,12 @@ class HostConfig:
             "-d",
         ]
         if "command" in self.config:
-            args.append(
-                self.config["command"]
-                .replace("{port}", str(self.config["port"]))
-                .replace("{host}", str(self.config["host"]))
-            )
+            command = self.config["command"]
+            for key in ["port", "host"]:
+                if key in self.config:
+                    command = command.replace("{%s}" % key, str(self.config[key]))
+
+            args.append(command)
         if "cwd" in self.config:
             kwargs["cwd"] = Path(self.config["cwd"]).expanduser().resolve()
 
